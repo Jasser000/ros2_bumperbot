@@ -1,8 +1,8 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument,OpaqueFunction
+from launch.actions import DeclareLaunchArgument,OpaqueFunction,GroupAction
 from launch.substitutions import LaunchConfiguration
-
+from launch.conditions import UnlessCondition,IfCondition
 
 def noisy_controller(context, *args, **kwargs):
     wheel_radius = float(LaunchConfiguration("wheel_radius").perform(context))
@@ -34,6 +34,12 @@ def generate_launch_description():
         default_value="0.17"
     )
 
+    use_simple_controller_arg = DeclareLaunchArgument(
+        "use_simple_controller",
+        default_value="True"
+    )
+
+
     wheel_radius_error_arg = DeclareLaunchArgument(
         "wheel_radius_error",
         default_value="0.005"
@@ -48,7 +54,7 @@ def generate_launch_description():
 
     wheel_radius = LaunchConfiguration("wheel_radius")
     wheel_separation = LaunchConfiguration("wheel_separation")
-
+    use_simple_controller = LaunchConfiguration("use_simple_controller")
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
@@ -60,22 +66,38 @@ def generate_launch_description():
         ]
     )
 
-    simple_controller = Node(
+    wheel_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=[
-            "simple_velocity_controller",
+            "bumperbot_controller",
             "--controller-manager",
             "/controller_manager"
+        ],
+        condition= UnlessCondition(use_simple_controller)
+    )
+
+    simple_controller = GroupAction(
+        condition=IfCondition(use_simple_controller),
+        actions=[
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                arguments=[
+                    "simple_velocity_controller",
+                    "--controller-manager",
+                    "/controller_manager"
+                ]
+            ),
+            Node(
+                package="bumperbot_controller",
+                executable="simple_controller",
+                parameters=[{"wheel_radius": wheel_radius,
+                             "wheel_separation":wheel_separation}]
+                )
         ]
     )
 
-    simple_controller_cpp = Node(
-        package="bumperbot_controller",
-        executable="simple_controller",
-        parameters=[{"wheel_radius": wheel_radius,
-                     "wheel_separation":wheel_separation}]
-    )
 
 
     noisy_controller_launch = OpaqueFunction(function=noisy_controller)
@@ -83,10 +105,11 @@ def generate_launch_description():
     return LaunchDescription([
         wheel_radius_arg,
         wheel_separation_arg,
+        use_simple_controller_arg,
         wheel_radius_error_arg,
         wheel_separation_error_arg,
         joint_state_broadcaster_spawner,
+        wheel_controller_spawner,
         simple_controller,
-        simple_controller_cpp,
         noisy_controller_launch
     ])
