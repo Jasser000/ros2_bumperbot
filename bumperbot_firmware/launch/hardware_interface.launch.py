@@ -39,7 +39,13 @@ def generate_launch_description():
         ]
     )
 
+    imu_driver_node = Node(
+        package="bumperbot_firmware",
+        executable="mpu6050_driver.py"
+    )
+
     return LaunchDescription([
         robot_state_publisher,
         controller_manager,
+        imu_driver_node
     ])
