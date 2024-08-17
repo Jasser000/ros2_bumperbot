@@ -80,13 +80,13 @@ class MPU6050_Driver(Node):
 
         return value
     
-    def main():
-        rclpy.init()
-        mpu6050_driver = MPU6050_Driver()
-        rclpy.spin(mpu6050_driver)
+def main():
+    rclpy.init()
+    mpu6050_driver = MPU6050_Driver()
+    rclpy.spin(mpu6050_driver)
 
-        mpu6050_driver.destroy_node()
-        rclpy.shutdown()
+    mpu6050_driver.destroy_node()
+    rclpy.shutdown()
 
-    if __name__ == '__main__':
-        main()
+if __name__ == '__main__':
+    main()
