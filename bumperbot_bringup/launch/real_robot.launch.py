@@ -20,7 +20,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             "use_simple_controller": "False",
-        }
+        }.items()
     )
 
     joystick = IncludeLaunchDescription(
@@ -35,4 +35,5 @@ def generate_launch_description():
     return LaunchDescription([
         hardware_interface,
         controller,
+        joystick
     ])
