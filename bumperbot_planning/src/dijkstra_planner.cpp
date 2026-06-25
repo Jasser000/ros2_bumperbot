@@ -19,7 +19,6 @@ void DijkstraPlanner::configure(
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
-  smooth_client_ = rclcpp_action::create_client<nav2_msgs::action::SmoothPath>(node_, "smooth_path");
 }
 
 void DijkstraPlanner::cleanup()
@@ -34,10 +33,6 @@ void DijkstraPlanner::activate()
   RCLCPP_INFO(
     node_->get_logger(), "Activating plugin %s of type DijkstraPlanner",
     name_.c_str());
-  if (!smooth_client_->wait_for_action_server(std::chrono::seconds(3))) {
-    RCLCPP_ERROR(node_->get_logger(), "Action server not available after waiting");
-    rclcpp::shutdown();
-  }
 }
 
 void DijkstraPlanner::deactivate()
@@ -101,8 +96,8 @@ nav_msgs::msg::Path DijkstraPlanner::createPlan(
 
 bool DijkstraPlanner::poseOnMap(const GraphNode & node)
 {
-    return node.x < static_cast<int>(map_->info.width) && node.x >= 0 &&
-        node.y < static_cast<int>(map_->info.height) && node.y >= 0;
+    return node.x < static_cast<int>(costmap_->getSizeInCellsX()) && node.x >= 0 &&
+        node.y < static_cast<int>(costmap_->getSizeInCellsY()) && node.y >= 0;
 }
 
 GraphNode DijkstraPlanner::worldToGrid(const geometry_msgs::msg::Pose & pose)
@@ -126,3 +121,6 @@ unsigned int DijkstraPlanner::poseToCell(const GraphNode & node)
 }
 
 }  // namespace bumperbot_planning
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(bumperbot_planning::DijkstraPlanner, nav2_core::GlobalPlanner)
